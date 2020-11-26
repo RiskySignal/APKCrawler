@@ -18,7 +18,7 @@
 1. 拷贝项目: 
 
         $ cd workspace/
-        $ git clone https://github.com/RiskySignal/crawl_for_apk_merge.git
+        $ git clone https://github.com/RiskySignal/APKCrawler
         $ cd crawl_for_apk_merge/
 
 ## 数据库Mysql配置
