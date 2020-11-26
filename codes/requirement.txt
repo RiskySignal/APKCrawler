@@ -1,0 +1,4 @@
+pymysql
+scrapy
+click
+image
