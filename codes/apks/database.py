@@ -248,14 +248,14 @@ class Database(object):
             sql_str
         )
         results = cursor.fetchall()
-        type_datas = []
+        type_data = []
         if results:
             for result in results:
-                type_datas.append((result['type_id'], result['type_name'].decode('utf-8')))
+                type_data.append((result['type_id'], result['type_name'].decode('utf-8')))
         else:
             raise ValueError('Get type Error.')
 
-        return type_datas
+        return type_data
 
     def get_all_market(self):
         sql_str = "select market_id, market_name from market;"
@@ -264,14 +264,12 @@ class Database(object):
             sql_str
         )
         results = cursor.fetchall()
-        market_datas = []
-        if results:
-            for result in results:
-                market_datas.append((result['market_id'], result['market_name'].decode('utf-8')))
-        else:
-            raise ValueError("Get market Error.")
+        for result in results:
+            result.update({
+                "market_name": result['market_name'].decode('utf-8')
+            })
 
-        return market_datas
+        return results
 
     def update_information(self, apk_hash: str, malware: bool = None, obfuscation: bool = None, sdk_level: str = None, authority_list: List[str] = None):
         """
@@ -282,7 +280,7 @@ class Database(object):
         :param sdk_level: sdk level
         :param authority_list: authority list with data like [<authority_name>, <authority_name>, ....]
         """
-        if apk_hash is None or malware is None or obfuscation is None or sdk_level is None or authority_list is None or len(authority_list) == 0:
+        if apk_hash is None or (malware is None and obfuscation is None and sdk_level is None and authority_list is None and len(authority_list) == 0):
             logging.info("No information for apk (hash: {}) need to update.".format(apk_hash))
             return
         if malware is not None or obfuscation is not None or sdk_level is not None:
@@ -325,3 +323,55 @@ class Database(object):
                 raise _err_
             else:
                 self.db.commit()
+
+    def get_all_app(self, market_id):
+        cursor = self.get_cursor()
+        sql_str = "select app_id, app_title from app where market_id=%s;"
+        cursor.execute(sql_str, (market_id,))
+        results = cursor.fetchall()
+        for result in results:
+            result.update({
+                "app_title": result['app_title'].decode('utf-8')
+            })
+        return results
+
+    def get_all_updates(self, app_id):
+        cursor = self.get_cursor()
+        sql_str = "select update_id, version from `update` where app_id=%s and is_delete=0;"
+        cursor.execute(sql_str, (app_id,))
+        results = cursor.fetchall()
+        for result in results:  # type: dict
+            result.update({
+                "version": result['version'].decode('utf-8')
+            })
+        return results
+
+    def get_information_from_update_id(self, update_id):
+        cursor = self.get_cursor()
+        sql_str = "select update_id, version, `size`, b.href as download_href, is_download, hex(apk_hash) as `hash`, malware, obfuscation, sdk_level, update_date, is_delete, app_title, apk_name, d.href as app_href, developer_name, type_name, market_name" \
+                  " from `update` a" \
+                  " left join link b on b.link_id=a.download_link_id" \
+                  " left join app c on c.app_id=a.app_id" \
+                  " left join link d on c.app_link_id=d.link_id" \
+                  " left join developer e on e.developer_id=c.developer_id" \
+                  " left join app_type f on f.type_id=c.type_id" \
+                  " left join market g on g.market_id=c.market_id" \
+                  " where update_id=%s;"
+        cursor.execute(sql_str, (update_id,))
+        results = cursor.fetchall()
+        for result in results:  # type: dict
+            result.update({
+                "version": result['version'].decode('utf-8'),
+                "size": result['size'].decode('utf-8') if result['size'] is not None else None,
+                "download_href": result['download_href'].decode('utf-8') if result['download_href'] is not None else None,
+                "hash": result['hash'].decode('utf-8') if result['hash'] is not None else None,
+                "sdk_level": result['sdk_level'].decode('utf-8') if result['sdk_level'] is not None else None,
+                "update_date": result['update_date'].strftime("%Y-%m-%d") if result['update_date'] is not None else None,
+                "app_title": result['app_title'].decode('utf-8'),
+                "apk_name": result['apk_name'].decode('utf-8'),
+                "app_href": result['app_href'].decode('utf-8') if result['app_href'] is not None else None,
+                "developer_name": result['developer_name'].decode('utf-8') if result['developer_name'] is not None else None,
+                "type_name": result['type_name'].decode('utf-8'),
+                "market_name": result['market_name'].decode('utf-8')
+            })
+        return results

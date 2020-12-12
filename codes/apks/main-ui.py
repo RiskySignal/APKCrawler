@@ -4,9 +4,12 @@ import platform
 
 import os
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QVBoxLayout, QPushButton, QHBoxLayout, QTextBrowser, QFileSystemModel, QTreeView, QGroupBox, QGridLayout, QProgressBar, QTableWidget, QDialog, QLabel, QLineEdit, QMessageBox, QAbstractItemView, QHeaderView, QTableWidgetItem
+from PyQt5.QtCore import QThread
+from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QVBoxLayout, QPushButton, QHBoxLayout, QTextBrowser, QGroupBox, QGridLayout, QProgressBar, QTableWidget, QDialog, QLabel, QLineEdit, QMessageBox, QAbstractItemView, QHeaderView, QTableWidgetItem, QListView
 from crontab import CronTab
 from crontab import CronItem
+from database import Database
 
 __current_folder_path__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -147,8 +150,16 @@ class CrawlerGUI(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.third_tree = QListView()
+        self.second_tree = QListView()
+        self.first_tree = QListView()
         self._keep_the_end_ = True
+        self.database_thread = DatabaseThread()
+        self.markets = None
+        self.apps = None
+        self.updates = None
 
+        self.root_layout = None
         self.crawler_combobox = QComboBox()
         self.start_crawl_button = QPushButton("Start")
         self.stop_crawl_button = QPushButton("Stop")
@@ -159,7 +170,8 @@ class CrawlerGUI(QWidget):
         self.apk_info_text = QTextBrowser()
         self.add_apk_button = QPushButton("Import APK From Folder ...")
         self.add_apk_progress_bar = QProgressBar()
-        self.root_layout = None
+        self.delete_apk_button = QPushButton("Delete")
+        self.delete_from_folder_button = QPushButton("")
 
         # scrapy
         self.scrapy_worker = ScrapyWorker()
@@ -215,21 +227,18 @@ class CrawlerGUI(QWidget):
         top_layout.setColumnStretch(0, 3)
         top_layout.setColumnStretch(1, 2)
 
-        ## bottom_layout 左右布局顶层文件树和子层文件树
+        ## bottom_layout 左右布局: 平台、软件、版本，详情描述
         file_system_group_box = QGroupBox(title="APK Dataset")
         file_system_layout = QHBoxLayout()
         file_system_group_box.setLayout(file_system_layout)
-        file_system_model = QFileSystemModel()
-        file_system_model.setFilter(QtCore.QDir.Dirs | QtCore.QDir.NoDotAndDotDot)
-        data_root_path = os.path.join(__current_folder_path__, "../../data")
-        data_root_path = data_root_path.replace("\\", "/")
-        file_system_model.setRootPath(data_root_path)
-        parent_tree = QTreeView()
-        child_tree = QTreeView()
-        parent_tree.setModel(file_system_model)
-        parent_tree.setRootIndex(file_system_model.index(data_root_path))
-        file_system_layout.addWidget(parent_tree)
-        file_system_layout.addWidget(child_tree)
+        file_system_layout.addWidget(self.first_tree)
+        file_system_layout.addWidget(self.second_tree)
+        file_system_layout.addWidget(self.third_tree)
+        file_system_layout.addWidget(self.apk_info_text)
+        file_system_layout.setStretch(0, 2)
+        file_system_layout.setStretch(1, 8)
+        file_system_layout.setStretch(2, 3)
+        file_system_layout.setStretch(3, 12)
         bottom_layout.addWidget(file_system_group_box)
 
         ### 爬虫模块布局 上下布局
@@ -301,6 +310,49 @@ class CrawlerGUI(QWidget):
         self.setLayout(root_layout)
         self.root_layout = root_layout
 
+    def first_tree_click(self):
+        current_row_index = self.first_tree.currentIndex().row()
+        self.database_thread.get_app(self.markets[current_row_index]["market_id"])
+
+    def second_tree_click(self):
+        current_row_index = self.second_tree.currentIndex().row()
+        self.database_thread.get_updates(self.apps[current_row_index]["app_id"])
+
+    def third_tree_click(self):
+        current_row_index = self.third_tree.currentIndex().row()
+        self.database_thread.get_information_from_update_id(self.updates[current_row_index]['update_id'])
+
+    def update_platform(self, markets):
+        platform_model = QStandardItemModel()
+        icon_path = os.path.join(__current_folder_path__, "./images/folder.png")
+        for market in markets:
+            platform_model.appendRow(QStandardItem(QIcon(icon_path), market['market_name']))
+        self.markets = markets
+        self.first_tree.setModel(platform_model)
+
+    def update_apps(self, apps):
+        app_model = QStandardItemModel()
+        icon_path = os.path.join(__current_folder_path__, "./images/android.png")
+        for app in apps:
+            app_model.appendRow(QStandardItem(QIcon(icon_path), app['app_title']))
+        self.apps = apps
+        self.second_tree.setModel(app_model)
+        self.second_tree.scrollTo(app_model.index(0, 0))
+
+    def update_updates(self, updates):
+        update_model = QStandardItemModel()
+        icon_path = os.path.join(__current_folder_path__, "./images/version.png")
+        for update in updates:
+            version = update['version'].split('.apk')[0] if update['version'].endswith('.apk') else update['version']
+            version = update['version'].split('.xapk')[0] if update['version'].endswith('.xapk') else version
+            update_model.appendRow(QStandardItem(QIcon(icon_path), version))
+        self.updates = updates
+        self.third_tree.setModel(update_model)
+        self.third_tree.scrollTo(update_model.index(0, 0))
+
+    def update_information(self, information):
+        print(information)
+
     def event_init(self):
         # crawler
         self.start_crawl_button.clicked.connect(self.start_on_click)
@@ -315,6 +367,19 @@ class CrawlerGUI(QWidget):
         self.timer_window.setWindowModality(QtCore.Qt.ApplicationModal)
         self.timer_window.timer_signal.connect(self.add_new_timer)
         self.add_timer_button.clicked.connect(self.add_timer_click)
+
+        # file system
+        self.database_thread.platform_signal.connect(self.update_platform)
+        self.database_thread.get_platform()
+        self.first_tree.clicked.connect(self.first_tree_click)
+        self.database_thread.app_signal.connect(self.update_apps)
+        self.second_tree.clicked.connect(self.second_tree_click)
+        self.database_thread.update_signal.connect(self.update_updates)
+        self.third_tree.clicked.connect(self.third_tree_click)
+        self.database_thread.information_signal.connect(self.update_information)
+        self.first_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.second_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.third_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
     def add_timer_click(self):
         self.timer_window.show()
@@ -403,6 +468,33 @@ class CrawlerGUI(QWidget):
             job.setall(crontab_time)
             job.enable()
             user_crontab.write()
+
+
+class DatabaseThread(QThread):
+    platform_signal = QtCore.pyqtSignal(list)
+    app_signal = QtCore.pyqtSignal(list)
+    update_signal = QtCore.pyqtSignal(list)
+    information_signal = QtCore.pyqtSignal(list)
+
+    def __init__(self):
+        super().__init__()
+        self.db = Database()
+
+    def get_platform(self) -> None:
+        markets = self.db.get_all_market()
+        self.platform_signal.emit(markets)
+
+    def get_app(self, market_id) -> None:
+        apps = self.db.get_all_app(market_id)
+        self.app_signal.emit(apps)
+
+    def get_updates(self, app_id) -> None:
+        updates = self.db.get_all_updates(app_id)
+        self.update_signal.emit(updates)
+
+    def get_information_from_update_id(self, update_id) -> None:
+        information = self.db.get_information_from_update_id(update_id)
+        self.information_signal.emit(information)
 
 
 class ScrapyWorker(QtCore.QObject):
