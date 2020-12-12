@@ -6,10 +6,16 @@ import os
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QIcon, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QVBoxLayout, QPushButton, QHBoxLayout, QTextBrowser, QGroupBox, QGridLayout, QProgressBar, QTableWidget, QDialog, QLabel, QLineEdit, QMessageBox, QAbstractItemView, QHeaderView, QTableWidgetItem, QListView
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QVBoxLayout, QPushButton, QHBoxLayout, QTextBrowser, QGroupBox, QGridLayout, QProgressBar, QTableWidget, QDialog, QLabel, QLineEdit, QMessageBox, QAbstractItemView, QHeaderView, QTableWidgetItem, QListView, QScrollArea
 from crontab import CronTab
 from crontab import CronItem
 from database import Database
+from settings import DEFAULT_DEVELOPER, DEFAULT_CATEGORY, DEFAULT_VERSION, DEFAULT_SIZE
+
+if platform.system() == "Windows":
+    from PyQt5 import sip
+else:
+    import sip
 
 __current_folder_path__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -85,25 +91,6 @@ class TimerGUI(QDialog):
         bottom_layout.addWidget(self.confirm_button)
         bottom_layout.addWidget(self.cancel_button)
 
-        ## 设置字体
-        button_font = QtGui.QFont()
-        button_font.setFamily("Roman times")
-        button_font.setPointSize(10)
-        self.confirm_button.setFont(button_font)
-        self.cancel_button.setFont(button_font)
-        combobox_font = QtGui.QFont()
-        combobox_font.setFamily("微软雅黑")
-        combobox_font.setPointSize(10)
-        self.crawler_combobox.setFont(combobox_font)
-        label_font = QtGui.QFont()
-        label_font.setFamily("Roman times")
-        label_font.setPointSize(9)
-        month_label.setFont(label_font)
-        day_label.setFont(label_font)
-        hour_label.setFont(label_font)
-        minute_label.setFont(label_font)
-        crawler_label.setFont(label_font)
-
         ## 设置高度
         self.crawler_combobox.setFixedHeight(25)
         self.month_edit.setFixedHeight(25)
@@ -164,14 +151,16 @@ class CrawlerGUI(QWidget):
         self.start_crawl_button = QPushButton("Start")
         self.stop_crawl_button = QPushButton("Stop")
         self.add_timer_button = QPushButton("Add Timer")
-        self.delete_timer_button = QPushButton("Del Timer")
+        self.delete_timer_button = QPushButton("Delete Timer")
         self.crawler_log_text = QTextBrowser()
         self.timer_table = QTableWidget()
-        self.apk_info_text = QTextBrowser()
-        self.add_apk_button = QPushButton("Import APK From Folder ...")
+        self.apk_info_widget = QScrollArea()
+        self.apk_info_layout = QVBoxLayout()
+        self.add_apk_button = QPushButton(QIcon(os.path.join(__current_folder_path__, "./images/folder_import.png")), "Import APK From Folder")
         self.add_apk_progress_bar = QProgressBar()
-        self.delete_apk_button = QPushButton("Delete")
-        self.delete_from_folder_button = QPushButton("")
+        self.add_apk_down_layout = None
+        self.delete_apk_button = QPushButton("Delete APK")
+        self.delete_from_folder_button = QPushButton("Delete APK From Folder")
 
         # scrapy
         self.scrapy_worker = ScrapyWorker()
@@ -233,8 +222,16 @@ class CrawlerGUI(QWidget):
         file_system_group_box.setLayout(file_system_layout)
         file_system_layout.addWidget(self.first_tree)
         file_system_layout.addWidget(self.second_tree)
-        file_system_layout.addWidget(self.third_tree)
-        file_system_layout.addWidget(self.apk_info_text)
+        third_layout = QVBoxLayout()
+        third_layout.addWidget(self.third_tree)
+        third_layout.addWidget(self.delete_apk_button)
+        third_layout.addWidget(self.delete_from_folder_button)
+        file_system_layout.addLayout(third_layout)
+        self.apk_info_layout.addStretch()
+        self.apk_info_layout.setContentsMargins(0, 0, 0, 0)
+        self.apk_info_widget.setLayout(self.apk_info_layout)
+        self.apk_info_widget.setStyleSheet("QWidget{padding: 0px; background: white; border: 0.5px solid #888;} ")
+        file_system_layout.addWidget(self.apk_info_widget)
         file_system_layout.setStretch(0, 2)
         file_system_layout.setStretch(1, 8)
         file_system_layout.setStretch(2, 3)
@@ -261,17 +258,6 @@ class CrawlerGUI(QWidget):
         util_layout.addWidget(self.add_apk_button)
         util_layout.addWidget(self.add_apk_progress_bar)
 
-        # 组件字体
-        component_font = QtGui.QFont()
-        component_font.setFamily("Roman times")
-        component_font.setPointSize(11)
-        self.crawler_combobox.setFont(component_font)
-        self.start_crawl_button.setFont(component_font)
-        self.stop_crawl_button.setFont(component_font)
-        self.add_timer_button.setFont(component_font)
-        self.delete_timer_button.setFont(component_font)
-        self.add_apk_button.setFont(component_font)
-
         # crawler combobox 设置
         self.crawler_combobox.setStyleSheet("QComboBox{padding:5px}")
 
@@ -281,28 +267,6 @@ class CrawlerGUI(QWidget):
         # 设置进度条
         self.add_apk_progress_bar.setVisible(False)
         self.add_apk_progress_bar.setFixedHeight(20)
-
-        # QGroupBox 标题大小
-        group_box_font = QtGui.QFont()
-        group_box_font.setFamily("微软雅黑")
-        group_box_font.setPointSize(9)
-        crawler_group_box.setFont(group_box_font)
-        util_group_box.setFont(group_box_font)
-
-        # log, progress 字体
-        log_font = QtGui.QFont()
-        log_font.setFamily("Consolas")
-        log_font.setPointSize(9)
-        self.crawler_log_text.setFont(log_font)
-        self.add_apk_progress_bar.setFont(log_font)
-
-        # button大小
-        button_size_1 = (80, 25)
-        self.start_crawl_button.setFixedSize(*button_size_1)
-        self.stop_crawl_button.setFixedSize(*button_size_1)
-        button_size_2 = (112, 25)
-        self.add_timer_button.setFixedSize(*button_size_2)
-        self.delete_timer_button.setFixedSize(*button_size_2)
 
         # 爬虫选择框大小
         self.crawler_combobox.setFixedSize(200, 25)
@@ -350,8 +314,145 @@ class CrawlerGUI(QWidget):
         self.third_tree.setModel(update_model)
         self.third_tree.scrollTo(update_model.index(0, 0))
 
-    def update_information(self, information):
-        print(information)
+    def update_information_dom(self, information):
+        def generate_information_dom(item):
+            information_widget = QWidget()
+            information_layout = QVBoxLayout()
+            information_widget.setLayout(information_layout)
+            information_widget.setStyleSheet("QWidget{margin: 0px; padding: 0px; border: 0px; border-bottom: 3px dashed black; margin-bottom: 5px;}")
+
+            layout_2 = QHBoxLayout()
+            text_label = TextLabel("App Title : ")
+            text_line = TextSpan(item['app_title'])
+            layout_2.addWidget(text_label)
+            layout_2.addWidget(text_line)
+            text_label = TextLabel("Apk Name : ")
+            layout_2.addWidget(text_label)
+            text_line = TextSpan(item['apk_name'])
+            layout_2.addWidget(text_line)
+            layout_2.addStretch()
+            information_layout.addLayout(layout_2)
+
+            layout_3 = QHBoxLayout()
+            text_label = TextLabel("Market : ")
+            text_line = TextSpan(item['market_name'])
+            layout_3.addWidget(text_label)
+            layout_3.addWidget(text_line)
+            text_label = TextLabel("Developer : ")
+            text_line = TextSpan(item['developer_name'])
+            if item['developer_name'] == DEFAULT_DEVELOPER:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: grey;")
+            layout_3.addWidget(text_label)
+            layout_3.addWidget(text_line)
+            layout_3.addStretch()
+            information_layout.addLayout(layout_3)
+
+            layout_4 = QHBoxLayout()
+            text_label = TextLabel("Version : ")
+            text_line = TextSpan(item['version'] or DEFAULT_VERSION)
+            if not text_line or text_line == DEFAULT_VERSION:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: red;")
+            layout_4.addWidget(text_label)
+            layout_4.addWidget(text_line)
+            text_label = TextLabel("Update Date : ")
+            text_line = TextSpan(item['update_date'] or "UNKNOWN_DATE")
+            if not item['update_date']:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: grey;")
+            layout_4.addWidget(text_label)
+            layout_4.addWidget(text_line)
+            layout_4.addStretch()
+            information_layout.addLayout(layout_4)
+
+            layout41 = QHBoxLayout()
+            text_label = TextLabel("Type : ")
+            text_line = TextSpan(item['type_name'] or DEFAULT_CATEGORY)
+            if item['type_name'] is None or item['type_name'] == DEFAULT_CATEGORY:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: red;")
+            layout41.addWidget(text_label)
+            layout41.addWidget(text_line)
+            text_label = TextLabel("Delete : ")
+            text_line = TextSpan("Not Deleted" if not item['is_delete'] else "Deleted")
+            if item['is_delete']:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: red;")
+            else:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: green;")
+            layout41.addWidget(text_label)
+            layout41.addWidget(text_line)
+            layout41.addStretch()
+            information_layout.addLayout(layout41)
+
+            layout42 = QHBoxLayout()
+            text_label = TextLabel("SDK Level : ")
+            text_line = TextSpan(item['sdk_level'] if item['sdk_level'] else "UNKNOWN_SDK")
+            if not item['sdk_level']:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: grey;")
+            layout42.addWidget(text_label)
+            layout42.addWidget(text_line)
+            text_label = TextLabel("Malware : ")
+            text_line = TextSpan("Malware" if item['malware'] else "UNKNOWN")
+            if item['malware']:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: red;")
+            else:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: grey;")
+            layout42.addWidget(text_label)
+            layout42.addWidget(text_line)
+            layout42.addStretch()
+            information_layout.addLayout(layout42)
+
+            layout43 = QHBoxLayout()
+            text_label = TextLabel("Download : ")
+            text_line = TextSpan("Downloaded" if item['is_download'] else "Not Downloaded")
+            if item['is_download']:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: green;")
+            else:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: red;")
+            layout43.addWidget(text_label)
+            layout43.addWidget(text_line)
+            text_label = TextLabel("Size : ")
+            text_line = TextSpan(item['size'] if item['size'] else DEFAULT_SIZE)
+            if not item['size'] or item['size'] == DEFAULT_SIZE:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: grey;")
+            layout43.addWidget(text_label)
+            layout43.addWidget(text_line)
+            layout43.addStretch()
+            information_layout.addLayout(layout43)
+
+            layout44 = QHBoxLayout()
+            text_label = TextLabel("APK Hash : ")
+            text_line = TextSpan(item['hash'] if item['hash'] else "UNKNOWN_HASH")
+            if not item['hash']:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: grey;")
+            else:
+                text_line.setStyleSheet(text_line.styleSheet() + "color: green; font-weight: bold;")
+                text_line.setFixedSize(482, 25)
+            layout44.addWidget(text_label)
+            layout44.addWidget(text_line)
+            layout44.addStretch()
+            information_layout.addLayout(layout44)
+
+            layout_5 = QHBoxLayout()
+            text_label = TextLabel("App Link : ")
+            text_line = TextHref("Open Link", item['app_href'])
+            layout_5.addWidget(text_label)
+            layout_5.addWidget(text_line)
+            text_label = TextLabel("Download Link : ")
+            text_label.setFixedSize(110, 25)
+            text_line = TextHref("Open Link", item['download_href'])
+            layout_5.addWidget(text_label)
+            layout_5.addWidget(text_line)
+            layout_5.addStretch()
+            information_layout.addLayout(layout_5)
+
+            return information_widget
+
+        sip.delete(self.apk_info_layout.takeAt(self.apk_info_layout.count() - 1))
+        for _i_ in range(self.apk_info_layout.count()):
+            tmp_layout = self.apk_info_layout.itemAt(_i_).widget()
+            tmp_layout.deleteLater()
+            sip.delete(tmp_layout)
+        for information_item in information:
+            self.apk_info_layout.addWidget(generate_information_dom(information_item))
+            self.apk_info_layout.addStretch()
 
     def event_init(self):
         # crawler
@@ -376,7 +477,7 @@ class CrawlerGUI(QWidget):
         self.second_tree.clicked.connect(self.second_tree_click)
         self.database_thread.update_signal.connect(self.update_updates)
         self.third_tree.clicked.connect(self.third_tree_click)
-        self.database_thread.information_signal.connect(self.update_information)
+        self.database_thread.information_signal.connect(self.update_information_dom)
         self.first_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.second_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.third_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -524,6 +625,30 @@ class ScrapyWorker(QtCore.QObject):
     @QtCore.pyqtSlot()
     def stop(self):
         self._process.kill()
+
+
+class TextLabel(QLabel):
+    def __init__(self, text):
+        super(TextLabel, self).__init__(text)
+        self.setStyleSheet("border: 0px; margin-right: 5px; padding-right: 0px; font-weight: bold;")
+        self.setFixedSize(90, 25)
+
+
+class TextSpan(QLabel):
+    def __init__(self, text):
+        super(TextSpan, self).__init__(text)
+        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; padding-right: 0px; border-bottom: 1px solid #888;")
+        self.setAlignment(QtCore.Qt.AlignCenter)
+        self.setFixedSize(190, 25)
+
+
+class TextHref(QLabel):
+    def __init__(self, text, href):
+        super(TextHref, self).__init__('<a href="{}">{}</a>'.format(href, text))
+        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; padding-right: 0px;")
+        self.setOpenExternalLinks(True)
+        self.setAlignment(QtCore.Qt.AlignCenter)
+        self.setFixedSize(190, 25)
 
 
 if __name__ == '__main__':
