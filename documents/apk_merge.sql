@@ -11,7 +11,7 @@
  Target Server Version : 80019
  File Encoding         : 65001
 
- Date: 02/11/2020 16:48:27
+ Date: 15/12/2020 19:43:43
 */
 
 SET NAMES utf8mb4;
@@ -25,7 +25,7 @@ CREATE TABLE `app`  (
   `app_id` int UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '应用id',
   `app_title` char(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '应用名称',
   `apk_name` char(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT 'apk包名',
-  `app_link_id` int UNSIGNED NOT NULL COMMENT 'app详解链接地址id',
+  `app_link_id` int UNSIGNED NULL DEFAULT NULL COMMENT 'app详解链接地址id',
   `developer_id` mediumint UNSIGNED NOT NULL COMMENT '开发者id',
   `type_id` smallint UNSIGNED NOT NULL COMMENT 'app类型id',
   `market_id` tinyint UNSIGNED NOT NULL COMMENT '应用商城id',
@@ -37,7 +37,7 @@ CREATE TABLE `app`  (
   CONSTRAINT `app.app_link_id` FOREIGN KEY (`app_link_id`) REFERENCES `link` (`link_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `app.market_id` FOREIGN KEY (`market_id`) REFERENCES `market` (`market_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `app.type_id` FOREIGN KEY (`type_id`) REFERENCES `app_type` (`type_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 460 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = 'app表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = 'app表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for app_type
@@ -48,7 +48,7 @@ CREATE TABLE `app_type`  (
   `type_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '类型名称',
   PRIMARY KEY (`type_id`) USING BTREE,
   UNIQUE INDEX `name`(`type_name`) USING BTREE COMMENT '类型名称唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 53 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '应用类型表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for authority
@@ -59,7 +59,7 @@ CREATE TABLE `authority`  (
   `authority_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '权限名称',
   PRIMARY KEY (`authority_id`) USING BTREE,
   UNIQUE INDEX `authority_name`(`authority_name`) USING BTREE COMMENT '权限名称唯一'
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '权限名称表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '权限名称表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for authority_relation
@@ -70,11 +70,11 @@ CREATE TABLE `authority_relation`  (
   `update_id` int UNSIGNED NOT NULL COMMENT 'update id',
   `authority_id` smallint UNSIGNED NOT NULL COMMENT 'authority id',
   PRIMARY KEY (`authority_relation_id`) USING BTREE,
-  INDEX `authority_relation_authority_id`(`authority_id`) USING BTREE,
   UNIQUE INDEX `unique_authority_relation`(`update_id`, `authority_id`) USING BTREE COMMENT 'update_id和authority_id唯一确定',
+  INDEX `authority_relation_authority_id`(`authority_id`) USING BTREE,
   CONSTRAINT `authority_relation_authority_id` FOREIGN KEY (`authority_id`) REFERENCES `authority` (`authority_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `authority_relation_update_id` FOREIGN KEY (`update_id`) REFERENCES `update` (`update_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = 'update 对应 authority的关系' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = 'update 对应 authority的关系' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for developer
@@ -85,7 +85,7 @@ CREATE TABLE `developer`  (
   `developer_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '开发者名称',
   PRIMARY KEY (`developer_id`) USING BTREE,
   UNIQUE INDEX `name`(`developer_name`) USING BTREE COMMENT '开发者名称唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 1479 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '开发者表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for image
@@ -101,7 +101,7 @@ CREATE TABLE `image`  (
   INDEX `image.update_id`(`update_id`) USING BTREE,
   CONSTRAINT `image.image_link_id` FOREIGN KEY (`image_link_id`) REFERENCES `link` (`link_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `image.update_id` FOREIGN KEY (`update_id`) REFERENCES `update` (`update_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 665 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '图片表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '图片表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for link
@@ -112,7 +112,7 @@ CREATE TABLE `link`  (
   `href` varchar(1023) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '网址',
   PRIMARY KEY (`link_id`) USING BTREE,
   UNIQUE INDEX `href`(`href`) USING BTREE COMMENT '网址唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 490197 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '网页链接地址，采用不定长，独立分表优化update表的检索' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '网页链接地址，采用不定长，独立分表优化update表的检索' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for market
@@ -123,7 +123,7 @@ CREATE TABLE `market`  (
   `market_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '应用商城名字',
   PRIMARY KEY (`market_id`) USING BTREE,
   UNIQUE INDEX `market_name_unique_index`(`market_name`) USING BTREE COMMENT '应用商城名字唯一确定一个应用商城'
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '应用商城表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '应用商城表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for update
@@ -134,19 +134,55 @@ CREATE TABLE `update`  (
   `app_id` int UNSIGNED NOT NULL COMMENT '应用id',
   `version` char(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '版本号',
   `size` char(20) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '包大小',
-  `download_link_id` int UNSIGNED NOT NULL COMMENT '下载链接id',
+  `download_link_id` int UNSIGNED NULL DEFAULT NULL COMMENT '下载链接id',
   `is_download` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否下载',
   `apk_hash` binary(32) NULL DEFAULT NULL COMMENT 'apk sha256值',
   `malware` bit(1) NULL DEFAULT b'0' COMMENT '应用是否为恶意软件',
   `obfuscation` bit(1) NULL DEFAULT b'0' COMMENT '应用是否为加固混淆应用',
   `sdk_level` char(8) CHARACTER SET ascii COLLATE ascii_general_ci NULL DEFAULT NULL COMMENT 'sdk level',
   `update_date` datetime(0) NULL DEFAULT NULL COMMENT '更新日期',
+  `is_delete` bit(1) NOT NULL DEFAULT b'0' COMMENT '删除标记',
   PRIMARY KEY (`update_id`) USING BTREE,
   UNIQUE INDEX `update_unique_index`(`app_id`, `version`) USING BTREE COMMENT 'app id和版本号唯一确定一个更新',
   INDEX `update.download_link_id`(`download_link_id`) USING BTREE,
   CONSTRAINT `update.app_id` FOREIGN KEY (`app_id`) REFERENCES `app` (`app_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `update.download_link_id` FOREIGN KEY (`download_link_id`) REFERENCES `link` (`link_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 461 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = 'update表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '应用版本更新表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Procedure structure for insert_app_from_file
+-- ----------------------------
+DROP PROCEDURE IF EXISTS `insert_app_from_file`;
+delimiter ;;
+CREATE PROCEDURE `insert_app_from_file`(IN `title_in` char(255),IN `name_in` char(255),IN `developer_in` VARCHAR(255),IN `type_in` varchar(255),IN `market_in` varchar(255),IN `version_in` char(255),IN `size_in` char(20),IN `update_date_in` DATETIME,IN `apk_hash_in` CHAR(64))
+BEGIN
+	# declare local variables
+	DECLARE local_market_id TINYINT UNSIGNED;
+	DECLARE local_type_id SMALLINT UNSIGNED;
+	DECLARE local_developer_id MEDIUMINT UNSIGNED;
+	DECLARE local_app_id INT UNSIGNED;
+	
+	# save the market
+	INSERT IGNORE INTO market(market_name) VALUES(market_in);
+	SELECT market_id INTO local_market_id FROM market WHERE market_name=market_in;
+	
+	# save the type
+	INSERT IGNORE INTO app_type(type_name) VALUES(type_in);
+	SELECT type_id INTO local_type_id FROM app_type WHERE type_name=type_in;
+	
+	# save the developer
+	INSERT IGNORE INTO developer(developer_name) VALUES(developer_in);
+	SELECT developer_id INTO local_developer_id FROM developer WHERE developer_name=developer_in;
+	
+	# save the app
+	INSERT IGNORE INTO app(app_title, apk_name, developer_id, type_id, market_id) VALUES(title_in, name_in, local_developer_id, local_type_id, local_market_id);
+	SELECT app_id INTO local_app_id FROM app WHERE apk_name=name_in AND market_id=local_market_id;
+	
+	# save the update
+	INSERT IGNORE INTO `update`(app_id, version, size, is_download, apk_hash, update_date) VALUES(local_app_id, version_in, size_in, TRUE, UNHEX(apk_hash_in), update_date_in);
+END
+;;
+delimiter ;
 
 -- ----------------------------
 -- Procedure structure for insert_app_update
@@ -168,7 +204,7 @@ BEGIN
 	SELECT link_id INTO local_app_link_id FROM link WHERE href=app_link_in;
 	SELECT link_id INTO local_download_link_id FROM link WHERE href=download_link_in;
 	
-	# save the marget
+	# save the market
 	INSERT IGNORE INTO market(market_name) VALUES(market_in);
 	SELECT market_id INTO local_market_id FROM market WHERE market_name=market_in;
 	

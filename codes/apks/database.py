@@ -102,7 +102,7 @@ class Database(object):
                 item['update_id'] = result['update_id']
             else:
                 raise pymysql.DatabaseError("Get update_id Error.")
-        except Exception as _err:
+        except pymysql.Error as _err:
             self.db.rollback()
             raise _err
         else:
@@ -242,7 +242,7 @@ class Database(object):
             raise ValueError("Get app type name Error.")
 
     def get_all_app_type(self):
-        sql_str = "select type_id, type_name from app_type;"
+        sql_str = "select type_id, type_name from app_type order by type_name;"
         cursor = self.get_cursor()
         cursor.execute(
             sql_str
@@ -264,6 +264,7 @@ class Database(object):
             sql_str
         )
         results = cursor.fetchall()
+        results = [] if not results else results
         for result in results:
             result.update({
                 "market_name": result['market_name'].decode('utf-8')
@@ -329,6 +330,7 @@ class Database(object):
         sql_str = "select app_id, app_title from app where market_id=%s;"
         cursor.execute(sql_str, (market_id,))
         results = cursor.fetchall()
+        results = [] if not results else results
         for result in results:
             result.update({
                 "app_title": result['app_title'].decode('utf-8')
@@ -340,13 +342,14 @@ class Database(object):
         sql_str = "select update_id, version from `update` where app_id=%s and is_delete=0;"
         cursor.execute(sql_str, (app_id,))
         results = cursor.fetchall()
+        results = [] if not results else results
         for result in results:  # type: dict
             result.update({
                 "version": result['version'].decode('utf-8')
             })
         return results
 
-    def get_information_from_update_id(self, update_id):
+    def get_information_by_update_id(self, update_id):
         cursor = self.get_cursor()
         sql_str = "select update_id, version, `size`, b.href as download_href, is_download, hex(apk_hash) as `hash`, malware, obfuscation, sdk_level, update_date, is_delete, app_title, apk_name, d.href as app_href, developer_name, type_name, market_name" \
                   " from `update` a" \
@@ -359,6 +362,7 @@ class Database(object):
                   " where update_id=%s;"
         cursor.execute(sql_str, (update_id,))
         results = cursor.fetchall()
+        results = [] if not results else results
         for result in results:  # type: dict
             result.update({
                 "version": result['version'].decode('utf-8'),
@@ -375,3 +379,143 @@ class Database(object):
                 "market_name": result['market_name'].decode('utf-8')
             })
         return results
+
+    def get_information_by_file_hash(self, file_hash):
+        cursor = self.get_cursor()
+        sql_str = "select update_id, version, `size`, b.href as download_href, is_download, hex(apk_hash) as `hash`, malware, obfuscation, sdk_level, update_date, is_delete, app_title, apk_name, d.href as app_href, developer_name, type_name, market_name" \
+                  " from `update` a" \
+                  " left join link b on b.link_id=a.download_link_id" \
+                  " left join app c on c.app_id=a.app_id" \
+                  " left join link d on c.app_link_id=d.link_id" \
+                  " left join developer e on e.developer_id=c.developer_id" \
+                  " left join app_type f on f.type_id=c.type_id" \
+                  " left join market g on g.market_id=c.market_id" \
+                  " where apk_hash=unhex(%s);"
+        cursor.execute(sql_str, (file_hash,))
+        results = cursor.fetchall()
+        results = [] if not results else results
+        for result in results:  # type: dict
+            result.update({
+                "version": result['version'].decode('utf-8'),
+                "size": result['size'].decode('utf-8') if result['size'] is not None else None,
+                "download_href": result['download_href'].decode('utf-8') if result['download_href'] is not None else None,
+                "hash": result['hash'].decode('utf-8') if result['hash'] is not None else None,
+                "sdk_level": result['sdk_level'].decode('utf-8') if result['sdk_level'] is not None else None,
+                "update_date": result['update_date'].strftime("%Y-%m-%d") if result['update_date'] is not None else None,
+                "app_title": result['app_title'].decode('utf-8'),
+                "apk_name": result['apk_name'].decode('utf-8'),
+                "app_href": result['app_href'].decode('utf-8') if result['app_href'] is not None else None,
+                "developer_name": result['developer_name'].decode('utf-8') if result['developer_name'] is not None else None,
+                "type_name": result['type_name'].decode('utf-8'),
+                "market_name": result['market_name'].decode('utf-8')
+            })
+        return results
+
+    def delete_apk_by_update_id(self, update_id):
+        cursor = self.get_cursor()
+        sql_str = "update `update` set is_delete=TRUE where update_id=%s;"
+        try:
+            cursor.execute(sql_str, (update_id,))
+        except pymysql.Error as _err_:
+            self.db.rollback()
+            raise _err_
+        else:
+            self.db.commit()
+
+    def delete_apk_by_hash(self, apk_hash):
+        cursor = self.get_cursor()
+        sql_str = "update `update` set is_delete=TRUE where apk_hash=unhex(%s);"
+        try:
+            cursor.execute(sql_str, (apk_hash,))
+        except pymysql.Error as _err_:
+            self.db.rollback()
+            raise _err_
+        else:
+            self.db.commit()
+
+    def get_all_sdk_level(self):
+        cursor = self.get_cursor()
+        sql_str = "select `sdk_level` from `update` group by sdk_level order by sdk_level;"
+        cursor.execute(sql_str)
+        results = cursor.fetchall()
+        sdk_level_list = []
+        for result in results:
+            if result and result['sdk_level']:
+                sdk_level_list.append(result['sdk_level'].decode('utf-8'))
+        return sdk_level_list
+
+    def get_all_authority(self):
+        cursor = self.get_cursor()
+        sql_str = "select authority_id, `authority_name` from `authority` order by authority_name;"
+        cursor.execute(sql_str)
+        results = cursor.fetchall()
+        authority_list = []
+        for result in results:
+            if result and result['authority_name']:
+                authority_list.append((result['authority_id'], result['authority_name'].decode('utf-8')))
+        return authority_list
+
+    def search_platform_not_delete(self):
+        cursor = self.get_cursor()
+        sql_str = "select market_id, `market_name` from `update` join app using(app_id) join market using(market_id) where is_delete=FALSE group by market_id order by market_name;"
+        cursor.execute(sql_str)
+        results = cursor.fetchall()
+        market_list = []
+        for result in results:
+            if result and result['market_name']:
+                market_list.append({
+                    "market_id": result['market_id'],
+                    "market_name": result['market_name'].decode('utf-8')
+                })
+        return market_list
+
+    def search_app_not_delete(self, market_id):
+        cursor = self.get_cursor()
+        sql_str = "select app_id, app_title from `update` join app using(app_id) join market using(market_id) where is_delete=FALSE and market_id=%s group by app_id order by app_title;"
+        cursor.execute(sql_str, (market_id,))
+        results = cursor.fetchall()
+        app_list = []
+        for result in results:
+            if result and result['app_title']:
+                app_list.append({
+                    "app_id": result['app_id'],
+                    "app_title": result['app_title'].decode('utf-8')
+                })
+        return app_list
+
+    def search_update_not_delete(self, app_id):
+        cursor = self.get_cursor()
+        sql_str = "select version, update_id from `update` join app using(app_id) where is_delete=FALSE  and app_id=%s group by version;"
+        cursor.execute(sql_str, (app_id,))
+        results = cursor.fetchall()
+        update_list = []
+        for result in results:
+            if result and result['version']:
+                update_list.append({
+                    "update_id": result['update_id'],
+                    "version": result['version'].decode('utf-8')
+                })
+        return update_list
+
+    def insert_app_from_file(self, market_name, apk_hash, app_title, apk_name, developer, app_type, version, size, update_date):
+        cursor = self.get_cursor()
+        # check the app whether in the market
+        check_sql_str = "select update_id from `update` join app using(app_id) join market using(market_id) where market_name=%s and apk_hash=unhex(%s);"
+        cursor.execute(check_sql_str, (market_name, apk_hash))
+        results = cursor.fetchall()
+        if results and len(results) > 0:
+            return False
+
+        # insert app
+        try:
+            cursor.callproc(
+                "insert_app_from_file",
+                (app_title, apk_name, developer, app_type, market_name, version, size, update_date, apk_hash)
+            )
+        except pymysql.err as _err_:
+            self.db.rollback()
+            raise _err_
+        else:
+            self.db.commit()
+
+        return True

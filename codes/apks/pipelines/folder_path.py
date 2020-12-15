@@ -1,12 +1,10 @@
 # coding=utf-8
 import os
 
-from items import AppDetail
-
 __current_folder__ = os.path.dirname(__file__)
 
 
-def get_app_folder(item: AppDetail):
+def get_app_folder(item):
     market = item['market']
     apk_name = item['apk_name']
     version = item['version']

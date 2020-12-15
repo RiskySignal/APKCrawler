@@ -50,7 +50,7 @@ delimiter ;
 
 DROP PROCEDURE IF EXISTS `apk_merge`.`insert_app_from_file`;
 delimiter ;;
-CREATE DEFINER = CURRENT_USER PROCEDURE `insert_app_from_file`(IN `title_in` char(255),IN `name_in` char(255),IN `developer_in` VARCHAR(255),IN `type_in` varchar(255),IN `market_in` varchar(255),IN `version_in` char(255),IN `size_in` char(20),IN `update_date_in` DATETIME,IN `apk_hash_in` CHAR(64))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `insert_app_from_file`(IN `title_in` char(255),IN `name_in` char(255),IN `developer_in` VARCHAR(255),IN `type_in` varchar(255),IN `market_in` varchar(255),IN `version_in` char(255),IN `size_in` char(20),IN `update_date_in` DATETIME,IN `apk_hash_in` CHAR(64))
 BEGIN
 	# declare local variables
 	DECLARE local_market_id TINYINT UNSIGNED;
@@ -75,7 +75,7 @@ BEGIN
 	SELECT app_id INTO local_app_id FROM app WHERE apk_name=name_in AND market_id=local_market_id;
 
 	# save the update
-	INSERT IGNORE INTO `update`(app_id, version, size, is_download, apk_hash, update_date) VALUES(local_app_id, version_in, size_in, TRUE, apk_hash_in, update_date_in);
+	INSERT IGNORE INTO `update`(app_id, version, size, is_download, apk_hash, update_date) VALUES(local_app_id, version_in, size_in, TRUE, UNHEX(apk_hash_in), update_date_in);
 END
 ;;
 delimiter ;
