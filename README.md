@@ -1,7 +1,7 @@
 # Crawler for APP Platform
 
 项目中抽离出来的 apk 爬虫模块，支持 [ApkPure](https://apkpure.com/) , [Github](https://github.com/search?q=apk&type=commits) , [Xiaomi](https://app.mi.com/) , [FossDroid](https://fossdroid.com/) .
- 
+
 整个爬虫采用 Scrapy + Mysql 对目标平台上的apk增量进行爬取，大家对这些平台按需爬取，不要影响这些平台的正常运作 :blush: .
 
 
@@ -26,7 +26,7 @@
 1. 安装Mysql: 详细可参照 [这里](https://wangxin1248.github.io/linux/2018/07/ubuntu18.04-install-mysqlserver.html), 仅需完成 **安装 Mysql** 和 **配置 Mysql** .
 2. 确认在 **当前** 用户下可以通过命令 `mysql -u root -p` 登录mysql, 程序中默认的密码为 `123456` .
 3. 初始化数据库: 
-    
+   
     其中复制 my.cnf 这一步不是必须的，你可以自己配置自己的mysql中的字符集为 `utf-8`.
 
         $ cd crawl_for_apk_merge/
@@ -42,7 +42,8 @@
 1. 需要的 python 版本为 python3.
 2. 进入代码文件夹 `cd ./crawl_for_apk_merge/codes`.
 3. 安装依赖包 `pip install -r requirement.txt`.
-4. 爬取apk `python3 main.py --help`可以查看具体的用法，爬取的过程主要与服务器的下载速度和 Market 的 Apk 数量相关.
+4. 爬取 apk `python3 main.py --help` 可以查看具体的用法，爬取的过程主要与服务器的下载速度和 Market 的 Apk 数量相关.
+5. 直接使用 gui 界面, `python3 main_gui.py` , 在 windows 上不能使用定时器.
 
 ## 下载统计及其他脚本
 
@@ -68,7 +69,9 @@
     ![apkpure](./pictures/apkpure.png)
 
 5. GUI界面
-    ![gui](./pictures/gui.png)
+    ![image-20201215194718576](pictures/gui.png)
 
 ## Todo
-- 写一个简单的QT GUI界面
+- ~~写一个简单的QT GUI界面~~ -> 实现了集成 增删查, 定时器, 爬虫在内的界面;
+- 扩展爬虫平台
+- 将代理的设置加入 GUI 界面
