@@ -142,3 +142,7 @@ DEFAULT_MARKET = "custom"
 
 # set for running environment
 USING_PROXY = False
+
+# gui
+crontab_path = None
+python_interface = None

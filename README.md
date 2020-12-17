@@ -44,6 +44,7 @@
 3. 安装依赖包 `pip install -r requirement.txt`.
 4. 爬取 apk `python3 main.py --help` 可以查看具体的用法，爬取的过程主要与服务器的下载速度和 Market 的 Apk 数量相关.
 5. 直接使用 gui 界面, `python3 main_gui.py` , 在 windows 上不能使用定时器.
+    > 使用 GUI 前, 请配置 setting.py 最后两项.
 
 ## 下载统计及其他脚本
 

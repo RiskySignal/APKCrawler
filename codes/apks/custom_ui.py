@@ -32,6 +32,9 @@ class CrawlerGUI(QWidget):
         self.setFixedSize(width, height)
         self.setWindowTitle("Crawler GUI")
 
+        # 设置字体
+        self.setFont(QFont("Microsoft YaHei", 8.5))
+
         # set layout
         root_layout = QVBoxLayout()
         top_layout = QHBoxLayout()
@@ -151,7 +154,7 @@ class CrawlerGUI(QWidget):
 
     def timer_table_widget_init(self):
         # set layout
-        self.timer_table_widget.setColumnCount(6)
+        self.timer_table_widget.setColumnCount(5)
         self.timer_table_widget.setHorizontalHeaderLabels(['Month', "Day", "Hour", "Minute", "Week Day", "Crawler"])
         self.timer_table_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.timer_table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -329,7 +332,7 @@ class CrawlerGUI(QWidget):
 
 class TimerGUI(QDialog):
     # Timer GUI for adding new timer
-    timer_signal = QtCore.pyqtSignal(int, int, int, int, int, str)  # month, day, hour, minute, week_day, crawler
+    timer_signal = QtCore.pyqtSignal(int, int, int, int, str)  # month, day, hour, minute, week_day, crawler
 
     def __init__(self):
         super(TimerGUI, self).__init__()
@@ -345,7 +348,6 @@ class TimerGUI(QDialog):
         self.hour_edit = QLineEdit()
         self.day_edit = QLineEdit()
         self.month_edit = QLineEdit()
-        self.week_day_edit = QLineEdit()
 
         self.edit_init()
         self.layout_init()
@@ -387,11 +389,6 @@ class TimerGUI(QDialog):
         minute_layout.addWidget(minute_label)
         minute_layout.addWidget(self.minute_edit)
         top_layout.addLayout(minute_layout)
-        week_day_layout = QVBoxLayout()
-        week_day_label = QLabel(text="Week Day : ")
-        week_day_layout.addWidget(week_day_label)
-        week_day_layout.addWidget(self.week_day_edit)
-        top_layout.addLayout(week_day_layout)
         crawler_layout = QVBoxLayout()
         crawler_label = QLabel(text="Crawler: ")
         crawler_layout.addWidget(crawler_label)
@@ -414,7 +411,6 @@ class TimerGUI(QDialog):
         self.month_edit.setFixedHeight(25)
         self.day_edit.setFixedHeight(25)
         self.hour_edit.setFixedHeight(25)
-        self.week_day_edit.setFixedHeight(25)
         self.minute_edit.setFixedHeight(25)
 
         self.setLayout(root_layout)
@@ -444,14 +440,9 @@ class TimerGUI(QDialog):
             QMessageBox().critical(self, "Wrong Minute", "Invalid Minute. Please set minute as [0, 59], and -1 means no setting for minute.")
         minute = -1 if minute < 0 else minute
 
-        week_day = int(self.week_day_edit.text())
-        if week_day < -1 or week_day > 7:
-            QMessageBox().critical(self, "Wrong WeekDay", "Invalid Weekday. Please set weekday as [0, 7], and -1 means not setting for week_day.")
-        week_day = -1 if week_day < 0 else week_day
-
         crawler = self.crawler_combobox.currentText()
         self.close()
-        self.timer_signal.emit(month, day, hour, minute, week_day, crawler)
+        self.timer_signal.emit(month, day, hour, minute, crawler)
 
     def event_init(self):
         self.cancel_button.clicked.connect(self.reject)
@@ -462,20 +453,18 @@ class TimerGUI(QDialog):
         self.day_edit.setText("-1")
         self.hour_edit.setText("-1")
         self.minute_edit.setText("-1")
-        self.week_day_edit.setText("-1")
 
     def edit_init(self):
         self.month_edit.setValidator(QtGui.QIntValidator(-1, 12))  # 0 means no setting
         self.day_edit.setValidator(QtGui.QIntValidator(-1, 31))  # 0 means no setting
         self.hour_edit.setValidator(QtGui.QIntValidator(-1, 23))  # -1 means no setting
         self.minute_edit.setValidator(QtGui.QIntValidator(-1, 59))  # -1 means no setting
-        self.week_day_edit.setValidator(QtGui.QIntValidator(-1, 7))  # -1 means no setting
 
 
 class TextLabel(QLabel):
     def __init__(self, text):
         super(TextLabel, self).__init__(text)
-        self.setStyleSheet("border: 0px; margin-right: 5px; font-weight: bold;")
+        self.setStyleSheet("border: 0px; margin-right: 5px; font-weight: bold; font-size: 12px;")
         self.setFixedWidth(95)
         self.setFixedHeight(30)
         self.setContentsMargins(0, 0, 0, 0)
@@ -485,7 +474,7 @@ class TextLabel(QLabel):
 class TextSpan(QLabel):
     def __init__(self, text):
         super(TextSpan, self).__init__(text)
-        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; border-bottom: 1px solid #888;")
+        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; border-bottom: 1px solid #888; font-size: 12px;")
         self.setAlignment(QtCore.Qt.AlignCenter)
         self.setFixedWidth(195)
         self.setFixedHeight(30)
@@ -495,7 +484,7 @@ class TextSpan(QLabel):
 class TextHash(QLabel):
     def __init__(self, text):
         super(TextHash, self).__init__(text)
-        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; border-bottom: 1px solid #888; color: green; font-weight: bold;")
+        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; border-bottom: 1px solid #888; color: green; font-weight: bold; font-size: 12px;")
         self.setAlignment(QtCore.Qt.AlignCenter)
         self.setFixedHeight(30)
         self.setContentsMargins(0, 0, 0, 0)
@@ -504,7 +493,7 @@ class TextHash(QLabel):
 class TextHref(QLabel):
     def __init__(self, text, href):
         super(TextHref, self).__init__('<a href="{}">{}</a>'.format(href, text))
-        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px;")
+        self.setStyleSheet("border: 0px; font-weight: normal; margin-right: 5px; font-size: 12px;")
         self.setOpenExternalLinks(True)
         self.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignBottom)
         self.setFixedWidth(195)

@@ -1,5 +1,6 @@
 # coding=utf-8
 import datetime
+import sys
 
 from custom_ui import *
 from PyQt5 import QtGui
@@ -9,6 +10,7 @@ from crontab import CronTab
 from crontab import CronItem
 from ui_thread import *
 from pipelines.folder_path import get_app_folder
+from settings import crontab_path, python_interface
 
 __current_folder_path__ = os.path.dirname(os.path.abspath(__file__))
 
@@ -60,6 +62,7 @@ class MainGUI(CrawlerGUI):
         self.bind_search()
         self.bind_delete()
         self.bind_timer()
+        self.check_value()
 
     """
     加载ComboBox数据
@@ -124,6 +127,9 @@ class MainGUI(CrawlerGUI):
         self.crawler_log_text.setTextCursor(pre_cursor)
 
     def start_scrapy(self):
+        if not self.check_value():
+            return
+
         platform = self.crawler_combobox.currentText()
         self.start_crawl_button.setVisible(False)
         self.stop_crawl_button.setVisible(True)
@@ -468,11 +474,14 @@ class MainGUI(CrawlerGUI):
         self.update_timer()
 
     def add_timer_button_click(self):
+        if not self.check_value():
+            return
+
         self.timer_window.reset_edit()
         self.timer_window.show()
         self.timer_window.exec_()
 
-    def add_new_timer(self, month, day, hour, minute, week_day, crawler_name):
+    def add_new_timer(self, month, day, hour, minute, crawler_name):
         if month == -1 and day == -1 and hour == -1 and minute == -1:
             return
 
@@ -484,17 +493,15 @@ class MainGUI(CrawlerGUI):
             hour = "*"
         if minute == -1:
             minute = "*"
-        if week_day == -1:
-            week_day = "*"
 
         if platform.system() == "Windows":
             print("Not imply in windows.")
         else:
             crawler_script_path = os.path.join(__current_folder_path__, "main.py")
-            crontab_command = "python3 {} --market_name {}".format(crawler_script_path, crawler_name)
-            crontab_time = "{} {} {} {} {}".format(minute, hour, day, month, week_day)
-            comment = "apk merge crawler"
-            user_crontab = CronTab(user=True)
+            crontab_command = "{} {} --market_name {}".format(python_interface, crawler_script_path, crawler_name)
+            crontab_time = "{} {} {} {} *".format(minute, hour, day, month)
+            comment = "apk crawler job"
+            user_crontab = CronTab(tabfile=crontab_path)
             job = user_crontab.new(command=crontab_command, comment=comment)
             job.setall(crontab_time)
             job.enable()
@@ -506,25 +513,25 @@ class MainGUI(CrawlerGUI):
         if platform.system() == "Windows":
             print("Not imply in windows.")
         else:
-            user_crontab = CronTab(user=True)
-            job_iter = user_crontab.find_comment("apk merge crawler")
+            user_crontab = CronTab(tabfile=crontab_path)
+            job_iter = user_crontab.find_comment("apk crawler job")
             self.user_crontab = user_crontab
             self.timer_list = list(job_iter)
             timer_data_list = []
-            for job in job_iter:  # type: CronItem
-                month, day, hour, minute, week_day = job.month, job.dom, job.hour, job.minute, job.day
+            for job in self.timer_list:  # type: CronItem
+                month, day, hour, minute = job.month, job.dom, job.hour, job.minute
                 crawler = job.command.split('--market_name')[1].strip()
-                timer_data_list.append([month, day, hour, minute, week_day, crawler])
+                timer_data_list.append([month, day, hour, minute, crawler])
 
-            for _row_ in range(self.timer_table_widget.rowCount()):
-                self.timer_table_widget.removeRow(_row_)
+            self.timer_table_widget.clear()
+            self.timer_table_widget.setRowCount(len(timer_data_list))
+            _row_ = 0
             for timer_data in timer_data_list:
-                row = self.timer_table_widget.rowCount()
-                self.timer_table_widget.insertRow(row)
                 for _column_ in range(self.timer_table_widget.columnCount()):
                     q_table_widget_item = QTableWidgetItem(str(timer_data[_column_]))
                     q_table_widget_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-                    self.timer_table_widget.setItem(row, _column_, q_table_widget_item)
+                    self.timer_table_widget.setItem(_row_, _column_, q_table_widget_item)
+                _row_ += 1
 
     def delete_timer_button_click(self):
         timer_index = self.timer_table_widget.currentIndex().row()
@@ -547,6 +554,18 @@ class MainGUI(CrawlerGUI):
         log_file = os.path.join(__current_folder_path__, "../../log/main_gui.{}.log".format(datetime.datetime.now().strftime("%Y-%m-%d-%H")))
         with open(log_file, 'a') as _file_:
             _file_.write(_err_)
+
+    def check_value(self):
+        enviro = True
+        if crontab_path is None:
+            QMessageBox.warning(self, "Crontab Error", "Please set the 'crontab_path' in setting.py.", QMessageBox.Ok, QMessageBox.Ok)
+            enviro = False
+
+        if python_interface is None:
+            QMessageBox.warning(self, "Python Interface Error", "Please set the 'python_interface' in setting.py.", QMessageBox.Ok, QMessageBox.Ok)
+            enviro = False
+
+        return enviro
 
 
 if __name__ == '__main__':
