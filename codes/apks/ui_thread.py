@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+import sys
 import time
 from typing import *
 
@@ -9,7 +10,7 @@ from database import Database
 import glob
 from pipelines.folder_path import get_file_size
 from utils import cal_file_hash
-from settings import DEFAULT_DEVELOPER, DEFAULT_CATEGORY, DEFAULT_MARKET, DEFAULT_VERSION
+from settings import DEFAULT_DEVELOPER, DEFAULT_CATEGORY, DEFAULT_MARKET
 import traceback
 
 
@@ -69,6 +70,7 @@ class ScrapyWorker(QObject):
         self._process = QtCore.QProcess(self)
         self._process.setProcessChannelMode(QtCore.QProcess.MergedChannels)
         self._process.setProgram("python")
+        # self._process.setProgram("python3")  # todo: if you are using python
         self._process.readyReadStandardOutput.connect(self.on_readyReadStandardOutput)
         self._process.started.connect(self.communication.scrapy_start_signal)
         self._process.finished.connect(self.communication.scrapy_finish_signal)

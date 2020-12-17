@@ -29,6 +29,7 @@ class ContentPipeline(object):
         item.setdefault("size", DEFAULT_SIZE)
         item.setdefault("version", DEFAULT_VERSION)
         item.setdefault("picture_links", [])
+        item.setdefault("picture_link_ids", [])
         item.setdefault('update_id', None)
         if item['update_date'] is None:
             item['update_date'] = time.strftime("%Y-%m-%d", time.localtime())

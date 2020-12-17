@@ -1,6 +1,5 @@
 # coding=utf-8
 import datetime
-import sys
 
 from custom_ui import *
 from PyQt5 import QtGui
