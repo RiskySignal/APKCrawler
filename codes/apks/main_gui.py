@@ -96,12 +96,16 @@ class MainGUI(CrawlerGUI):
         self.sdk_combobox.addItems(sdk_list)
 
     def update_authority(self, authority_list):
+        if not authority_list:
+            return
         authority_index_list, authority_name_list = zip(*authority_list)
         authority_name_list = list(authority_name_list)
         self.authority_id_list = list(authority_index_list)
         self.authority_combobox.addItems(authority_name_list)
 
     def update_type(self, type_list):
+        if not type_list:
+            return
         type_index_list, type_name_list = zip(*type_list)
         self.type_id_list = list(type_index_list)
         self.type_combobox.addItems(type_name_list)
@@ -214,7 +218,7 @@ class MainGUI(CrawlerGUI):
             authority_id_list = [self.authority_id_list[_index_] for _index_ in authority_select_list]
         self.selected_authority_id_list = authority_id_list
 
-        # 未选中任何type 或选中全部type 时, 无需筛选
+        # 未选中任何type 或 选中全部type时, 无需筛选
         if len(app_type_select_list) == 0 or len(app_type_select_list) == len(self.type_id_list):
             type_id_list = None
         else:

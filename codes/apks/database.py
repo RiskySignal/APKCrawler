@@ -519,3 +519,38 @@ class Database(object):
             self.db.commit()
 
         return True
+
+    def get_local_update_info(self):
+        cursor = self.get_cursor()
+        sql_str = "select update_id, malware, obfuscation, sdk_level, is_delete from `update`;"
+        cursor.execute(sql_str)
+        results = cursor.fetchall()
+        filtered_result = {}
+        for result in results:
+            if result and (result['malware'] or result['obfuscation'] or result['sdk_level'] or result['is_delete']):
+                filtered_result[result['update_id']] = result
+        return filtered_result
+
+    def insert_local_update_info(self, update_info: dict):
+        cursor = self.get_cursor()
+        try:
+            for update_id, item_info in enumerate(update_info):
+                cursor.execute(
+                    "update `update` set malware=%s, obfuscation=%s, sdk_level=%s, is_delete=%s where update_id=%s;",
+                    (item_info['malware'], item_info['obfuscation'], item_info['sdk_level'], item_info['is_delete'], update_id)
+                )
+        except Exception as _err:
+            self.db.rollback()
+            raise _err
+        else:
+            self.db.commit()
+
+    def execute(self, sql_str: str):
+        try:
+            cursor = self.get_cursor()
+            cursor.execute(sql_str)
+        except Exception as _err:
+            self.db.rollback()
+            raise _err
+        else:
+            self.db.commit()

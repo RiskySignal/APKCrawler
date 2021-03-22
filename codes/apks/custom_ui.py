@@ -505,6 +505,7 @@ class ComboCheckBox(QComboBox):
     def __init__(self, parent=None):
         super(ComboCheckBox, self).__init__(parent)
         self.setFixedWidth(150)
+        self.row_num = 0
 
     def addItems(self, texts: typing.Iterable[str]) -> None:
         self.items = list(texts)
