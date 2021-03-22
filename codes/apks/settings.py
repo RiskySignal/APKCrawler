@@ -142,7 +142,11 @@ DEFAULT_MARKET = "custom"
 
 # set for running environment
 USING_PROXY = False
+PROXY_PATH = "http://127.0.0.1:10809"
 
 # gui
 crontab_path = None
 python_interface = None
+
+# opensource github crawler
+crawler_key_words = ["apk", 'android']

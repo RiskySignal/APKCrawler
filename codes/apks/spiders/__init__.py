@@ -6,5 +6,6 @@ from .apkpure_spider import ApkPureSpider
 from .fossdroid_spider import FossDroidSpider
 from .xiaomi_spider import XiaomiSpider
 from .github_spider import GithubSpider
+from .opensource_spider import OpenSourceSpider
 
-__all__ = ['ApkPureSpider', 'FossDroidSpider', 'XiaomiSpider', 'GithubSpider']
+__all__ = ['ApkPureSpider', 'FossDroidSpider', 'XiaomiSpider', 'GithubSpider', 'OpenSourceSpider']

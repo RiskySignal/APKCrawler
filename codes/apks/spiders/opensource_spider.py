@@ -2,7 +2,7 @@
 import scrapy
 import logging
 import items
-import os
+from settings import crawler_key_words
 
 
 class OpenSourceSpider(scrapy.Spider):
@@ -11,7 +11,7 @@ class OpenSourceSpider(scrapy.Spider):
 
     def start_requests(self):
         # define keywords
-        keywords = ["apk", 'android']
+        keywords = crawler_key_words
 
         start_url = "https://github.com/search?q={}&type=Repositories"
         for keyword in keywords:
@@ -44,27 +44,42 @@ class OpenSourceSpider(scrapy.Spider):
         project_name = response.css('main div.flex-auto strong.flex-self-stretch a::text').get()
 
         # update time
-        update_date = response.css("div.Box relative-time::attr('datetime')").get()
-        update_date = update_date.replace('T', " ").replace('Z', "")
+        update_date = response.css("relative-time::attr('datetime')").get()
+        if not update_date:
+            date_time = response.css("time-ago::attr('datetime')").getall()
+            if len(date_time) > 0:
+                update_date = date_time[0]
+                for _index_ in range(1, len(date_time)):
+                    update_date = date_time[_index_] if date_time[_index_] > update_date else update_date
+        try:
+            update_date = update_date.replace('T', ' ').replace('Z', ' ')
+        except Exception:
+            logging.warning("Load Update Info Error for {}".format(response.url))
+            yield scrapy.Request(response.url, callback=self.parse_repository)
+        else:
+            # description
+            description = response.css("div.repository-content div.BorderGrid div.BorderGrid-cell p::text").get()
+            if not description:
+                description = "No Description."
+            else:
+                description = description.strip()
 
-        # description
-        description = response.css("div.repository-content div.BorderGrid div.BorderGrid-cell p::text").get().strip()
+            # download url
+            zip_url = response.css("div.repository-content details.details-overlay ul.list-style-none li.Box-row a::attr('href')").getall()[1]
+            zip_url = response.urljoin(zip_url)
 
-        # download url
-        zip_url = response.css("div.repository-content details.details-overlay ul.list-style-none li.Box-row a::attr('href')").getall()[1]
-        zip_url = response.urljoin(zip_url)
+            info = {
+                "author": author,
+                "app_link": app_link,
+                "project_name": project_name,
+                "update_date": update_date,
+                "description": description,
+                "download_url": zip_url
+            }
 
-        info = {
-            "author": author,
-            "app_link": app_link,
-            "project_name": project_name,
-            "update_date": update_date,
-            "description": description,
-            "download_url": zip_url
-        }
-        yield scrapy.Request(
-            response.url, callback=self.parse_folder_check, meta=info
-        )
+            yield scrapy.Request(
+                response.url, callback=self.parse_folder_check, meta=info
+            )
 
     def parse_folder_check(self, response):
         # check whether a android project
@@ -80,15 +95,7 @@ class OpenSourceSpider(scrapy.Spider):
         if is_android_project:
             app_link = response.meta['app_link']
             project_name = response.meta['project_name']
-            relative_path = os.path.relpath(
-                response.url, os.path.join(app_link, "tree/master/")
-            ).replace("\\", '/')
-            if relative_path == ".":
-                app_title = project_name
-                apk_name = app_title
-            else:
-                app_title = project_name + " " + relative_path
-                apk_name = project_name + "_" + relative_path.replace("/", "_")
+            app_title = apk_name = project_name
 
             yield items.AppDetail(app_title=app_title, apk_name=apk_name, description=response.meta['description'], developer=response.meta['author'], app_link=app_link, market="github_opensource", version=response.meta['update_date'].split()[0], download_link=response.meta['download_url'], update_date=response.meta['update_date'])
         else:

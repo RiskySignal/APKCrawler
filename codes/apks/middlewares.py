@@ -12,4 +12,4 @@ class UserAgentMiddleware:
         random_ua = random.choice(settings.USER_AGENT_LIST)
         request.headers['User-Agent'] = random_ua
         if spider.settings["USING_PROXY"]:
-            request.meta['proxy'] = "http://127.0.0.1:10809"  # 这个设置成本地的proxy路径
+            request.meta['proxy'] = settings.PROXY_PATH

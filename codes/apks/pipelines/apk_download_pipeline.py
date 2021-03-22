@@ -26,7 +26,9 @@ class ApkDownloadPipeline(FilesPipeline):
         apk_name = item['apk_name']
 
         file_path = os.path.join(app_folder, apk_name)
-        if not file_path.endswith('.apk'):
+        if item['market'] == "github_opensource":
+            file_path += ".zip"
+        elif not file_path.endswith('.apk'):
             file_path += '.apk'
         file_path = os.path.relpath(file_path, project_settings.FILES_STORE)
         if not self.db_handler.get_update_status(item['update_id']):

@@ -9,7 +9,7 @@ from spiders import *
 
 
 @click.command()
-@click.option("--market_name", "-m", default="fossdroid", type=click.Choice(["fossdroid", "xiaomi", "apkpure", "github"], case_sensitive=False), help="Market Name in ['fossdroid', 'xiaomi', 'apkpure', 'github']. Default is fossdroid.")
+@click.option("--market_name", "-m", default="fossdroid", type=click.Choice(["fossdroid", "xiaomi", "apkpure", "github", "github_opensource"], case_sensitive=False), help="Market Name in ['fossdroid', 'xiaomi', 'apkpure', 'github', 'github_opensource']. Default is fossdroid.")
 @click.option("--using_log_file", "-l", expose_value=True, is_flag=True, help="Whether use log file to save the log information, default is False.")
 @click.option("--log_level", "-v", default="INFO", type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR']), help="Log level in ['DEBUG', 'INFO', 'WARNING', 'ERROR']. Default is INFO")
 @click.option("--using_proxy", "-u", default=False, type=bool, is_flag=True, help="Whether use proxy server on 127.0.0.1:10809.")
@@ -22,6 +22,8 @@ def main(market_name: str = "fossdroid", using_log_file: bool = False, log_level
         spider = ApkPureSpider
     elif market_name == "github":
         spider = GithubSpider
+    elif market_name == "github_opensource":
+        spider = OpenSourceSpider
     else:
         raise ValueError("Market Name Error.")
 
