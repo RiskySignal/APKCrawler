@@ -47,7 +47,7 @@ class MainGUI(CrawlerGUI):
     timer_list = []
     user_crontab = None
 
-    crawler_list = ["fossdroid", "xiaomi", "apkpure", "github"]
+    crawler_list = ["fossdroid", "xiaomi", "apkpure", "github", "github_opensource"]
 
     def __init__(self):
         super(MainGUI, self).__init__()
