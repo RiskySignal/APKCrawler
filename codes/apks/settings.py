@@ -145,8 +145,24 @@ USING_PROXY = False
 PROXY_PATH = "http://127.0.0.1:10809"
 
 # gui
-crontab_path = None
-python_interface = None
+python_interface = "python"
 
 # opensource github crawler
 crawler_key_words = ["apk", 'android']
+
+ProgressBarStyleSheet = '''
+/*设置红色进度条*/
+#RedProgressBar {
+    text-align: center; /*进度值居中*/
+}
+#RedProgressBar::chunk {
+    background-color: #F44336;
+}
+
+#BlueProgressBar {
+    text-align: center; /*进度值居中*/
+}
+#BlueProgressBar::chunk {
+    background-color: #2196F3;
+}
+'''

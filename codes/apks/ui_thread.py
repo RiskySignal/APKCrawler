@@ -184,7 +184,7 @@ class SearchPlatformThread(AutoDeleteRunnable):
     @catch_exception
     def run(self):
         db = Database()
-
+        print(self.communication, self.sdk_name_list, self.authority_id_list, self.type_id_list)
         if self.sdk_name_list is None and self.authority_id_list is None and self.type_id_list is None:
             # not apply any search condition
             market_list = db.search_platform_not_delete()

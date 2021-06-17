@@ -31,7 +31,7 @@ def main(market_name: str = "fossdroid", using_log_file: bool = False, log_level
     cur_folder = os.path.dirname(__file__)
     log_folder = os.path.join(cur_folder, "../../log/")
     if not os.path.exists(log_folder):
-        os.makedirs(log_folder)
+        os.makedirs(log_folder, exist_ok=True)
 
     process = CrawlerProcess(get_project_settings())
     if using_log_file:

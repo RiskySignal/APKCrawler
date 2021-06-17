@@ -1,28 +1,244 @@
 # coding=utf-8
 import datetime
+import platform
 import sys
 
-from custom_ui import *
-from PyQt5 import QtGui
+from PyQt5.QtCore import QThreadPool
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from crontab import CronTab
-from crontab import CronItem
-from ui_thread import *
+
 from pipelines.folder_path import get_app_folder
-from settings import python_interface
+from settings import ProgressBarStyleSheet
+from ui_thread import *
+from custom_ui import InformationWidget
+
+from custom_ui import ComboCheckBox, DragScrollArea
+
+if platform.system() == "Windows":
+    from PyQt5 import sip
+else:
+    import sip
 
 __current_folder_path__ = os.path.dirname(os.path.abspath(__file__))
+BUTTON_HEIGHT = 25
 
 
-class MainGUI(CrawlerGUI):
-    # Main GUI for crawler module
+class DataGUI(QWidget):
+    # Main GUI for data module.
+
+    def __init__(self):
+        super(DataGUI, self).__init__()
+        self.layout_init()
+
+    def layout_init(self):
+        # 整体大小
+        height = 600
+        width = 1400
+        self.setFixedSize(width, height)
+        self.setWindowTitle("Data GUI")
+
+        # 设置字体
+        self.setFont(QFont("Microsoft Yahei", 8.5))
+
+        # set layout
+        root_layout = QVBoxLayout()
+        body_widget = QGroupBox(title="Search Condition")
+        bottom_widget = QGroupBox(title="File Database")
+        root_layout.addWidget(body_widget)
+        root_layout.addWidget(bottom_widget)
+        root_layout.setStretch(0, 1)
+        root_layout.setStretch(1, 15)
+
+        # save the value
+        self.body_widget = body_widget
+        self.bottom_widget = bottom_widget
+
+        # init the sub layout
+        self.body_widget_init()
+        self.bottom_widget_init()
+
+        # show
+        self.setLayout(root_layout)
+
+    def body_widget_init(self):
+        # set the layout
+        search_condition_layout = QHBoxLayout()
+        sdk_level_layout = QVBoxLayout()
+        authority_layout = QVBoxLayout()
+        type_layout = QVBoxLayout()
+        search_button_layout = QVBoxLayout()
+        add_apk_layout = QVBoxLayout()
+
+        search_condition_layout.addLayout(sdk_level_layout)
+        search_condition_layout.addSpacing(20)
+        search_condition_layout.addLayout(authority_layout)
+        search_condition_layout.addSpacing(20)
+        search_condition_layout.addLayout(type_layout)
+        search_condition_layout.addSpacing(40)
+        search_condition_layout.addLayout(search_button_layout)
+        search_condition_layout.addStretch()
+        search_condition_layout.addLayout(add_apk_layout)
+        self.body_widget.setLayout(search_condition_layout)
+
+        # save the value
+        self.search_condition_layout = search_condition_layout
+        self.sdk_level_layout = sdk_level_layout
+        self.authority_layout = authority_layout
+        self.type_layout = type_layout
+        self.search_button_layout = search_button_layout
+        self.add_apk_layout = add_apk_layout
+
+        # init the sub layout
+        self.sdk_level_layout_init()
+        self.authority_layout_init()
+        self.type_layout_init()
+        self.search_button_layout_init()
+        self.add_apk_layout_init()
+
+    def add_apk_layout_init(self):
+        # set layout
+        add_apk_button = QPushButton(QIcon(os.path.join(__current_folder_path__, "./images/folder_import.png")), "Import APK From Folder")
+        add_apk_button.setFixedHeight(BUTTON_HEIGHT)
+        add_apk_progress_bar = QProgressBar()
+        add_apk_progress_bar.setObjectName("BlueProgressBar")
+        add_apk_progress_bar.setStyleSheet(ProgressBarStyleSheet)
+        add_apk_progress_bar.setVisible(False)
+        self.add_apk_layout.addWidget(add_apk_button)
+        self.add_apk_layout.addWidget(add_apk_progress_bar)
+        self.add_apk_layout.addStretch()
+
+        # save the value
+        self.add_apk_button = add_apk_button
+        self.add_apk_progress_bar = add_apk_progress_bar
+
+    def sdk_level_layout_init(self):
+        # set the layout
+        sdk_label = QLabel("SDK Level :")
+        sdk_combobox = ComboCheckBox()
+        sdk_combobox.setFixedHeight(BUTTON_HEIGHT)
+        self.sdk_level_layout.addWidget(sdk_label)
+        self.sdk_level_layout.addWidget(sdk_combobox)
+
+        # save the value
+        self.sdk_label = sdk_label
+        self.sdk_combobox = sdk_combobox
+
+    def authority_layout_init(self):
+        # set the layout
+        authority_label = QLabel("Permission : ")
+        authority_combobox = ComboCheckBox()
+        authority_combobox.setFixedHeight(BUTTON_HEIGHT)
+        self.authority_layout.addWidget(authority_label)
+        self.authority_layout.addWidget(authority_combobox)
+
+        # save the value
+        self.authority_label = authority_label
+        self.authority_combobox = authority_combobox
+
+    def type_layout_init(self):
+        # set the layout
+        type_label = QLabel("APP Type : ")
+        type_combobox = ComboCheckBox()
+        type_combobox.setFixedHeight(BUTTON_HEIGHT)
+        type_combobox.setFixedWidth(180)
+        self.type_layout.addWidget(type_label)
+        self.type_layout.addWidget(type_combobox)
+
+        # save the value
+        self.type_label = type_label
+        self.type_combobox = type_combobox
+
+    def search_button_layout_init(self):
+        # set the layout
+        search_button = QPushButton(
+            QIcon(os.path.join(__current_folder_path__, "./images/search.png")), "Search"
+        )
+        search_button.setFixedHeight(BUTTON_HEIGHT)
+        self.search_button_layout.addStretch()
+        self.search_button_layout.addWidget(search_button)
+
+        # save the value
+        self.search_button = search_button
+
+    def bottom_widget_init(self):
+        # set layout
+        file_system_layout = QHBoxLayout()
+        first_file_tree = QListView()
+        second_file_tree = QListView()
+        third_file_layout = QVBoxLayout()
+        apk_info_scroll_area = DragScrollArea()
+        apk_info_scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        file_system_layout.addWidget(first_file_tree)
+        file_system_layout.addWidget(second_file_tree)
+        file_system_layout.addLayout(third_file_layout)
+        file_system_layout.addWidget(apk_info_scroll_area)
+        file_system_layout.setStretch(0, 2)
+        file_system_layout.setStretch(1, 8)
+        file_system_layout.setStretch(2, 3)
+        file_system_layout.setStretch(3, 12)
+        self.bottom_widget.setLayout(file_system_layout)
+
+        # save the value
+        self.file_system_layout = file_system_layout
+        self.first_file_tree = first_file_tree
+        self.second_file_tree = second_file_tree
+        self.third_file_layout = third_file_layout
+        self.apk_info_scroll_area = apk_info_scroll_area
+
+        # init the sub layout
+        self.third_file_layout_init()
+        self.apk_info_scroll_area_init()
+
+    def third_file_layout_init(self):
+        # set layout
+        third_file_tree = QListView()
+        delete_apk_button = QPushButton("Delete APK")
+        delete_apk_button.setFixedHeight(BUTTON_HEIGHT)
+        delete_from_folder_button = QPushButton("Delete APKs From Folder")
+        delete_progress_bar = QProgressBar()
+        delete_progress_bar.setObjectName("RedProgressBar")
+        delete_progress_bar.setStyleSheet(ProgressBarStyleSheet)
+        delete_progress_bar.setVisible(False)
+        delete_from_folder_button.setFixedHeight(BUTTON_HEIGHT)
+        self.third_file_layout.addWidget(third_file_tree)
+        self.third_file_layout.addWidget(delete_apk_button)
+        self.third_file_layout.addWidget(delete_from_folder_button)
+        self.third_file_layout.addWidget(delete_progress_bar)
+
+        # save the value
+        self.third_file_tree = third_file_tree
+        self.delete_apk_button = delete_apk_button
+        self.delete_from_folder_button = delete_from_folder_button
+        self.delete_progress_bar = delete_progress_bar
+
+    def apk_info_scroll_area_init(self):
+        # set the layout
+        apk_info_widget = QWidget()
+        apk_info_layout = QVBoxLayout()
+        apk_info_widget.setLayout(apk_info_layout)
+        widget_style = QPalette()
+        widget_style.setColor(QPalette.Background, QtCore.Qt.white)
+        apk_info_widget.setPalette(widget_style)
+        apk_info_widget.setContentsMargins(0, 0, 0, 0)
+        self.apk_info_scroll_area.setWidget(apk_info_widget)
+        self.apk_info_scroll_area.setWidgetResizable(True)
+
+        # save the value
+        self.apk_info_widget = apk_info_widget
+        self.apk_info_layout = apk_info_layout
+
+    def clear_apk_info_layout(self):
+        for _i_ in range(self.apk_info_layout.count()):
+            tmp_widget = self.apk_info_layout.itemAt(_i_).widget()
+            tmp_widget.deleteLater()
+            sip.delete(tmp_widget)
+
+
+class DataProcess(DataGUI):
+    # Main GUI for data module
     sdk_level_signal = QtCore.pyqtSignal(list)
     authority_signal = QtCore.pyqtSignal(list)
     type_signal = QtCore.pyqtSignal(list)
-    scrapy_log_signal = pyqtSignal(str)
-    scrapy_start_signal = pyqtSignal()
-    scrapy_finish_signal = pyqtSignal()
     add_apk_signal = pyqtSignal(int, int, int)
     add_progress_signal = pyqtSignal(float)
     market_signal = pyqtSignal(list)
@@ -36,7 +252,6 @@ class MainGUI(CrawlerGUI):
     market_model = None
     app_model = None
     update_model = None
-    timer_model = None
 
     search_app_thread = None
     search_platform_thread = None
@@ -44,24 +259,18 @@ class MainGUI(CrawlerGUI):
     search_update_info_thread = None
 
     inbox_update_id_list = []
-    timer_list = []
-    user_crontab = None
-
-    crawler_list = ["fossdroid", "xiaomi", "apkpure", "github", "github_opensource"]
 
     def __init__(self):
-        super(MainGUI, self).__init__()
+        super(DataProcess, self).__init__()
         self.thread_pool = QThreadPool()
         self.thread_pool.globalInstance()
         self.thread_pool.setMaxThreadCount(8)
 
         self.bind_error()
         self.load_data()
-        self.bind_scrapy()
         self.bind_add_apk()
         self.bind_search()
         self.bind_delete()
-        self.bind_timer()
         self.check_value()
 
     """
@@ -69,9 +278,6 @@ class MainGUI(CrawlerGUI):
     """
 
     def load_data(self):
-        # crawler combobox
-        self.crawler_combobox.addItems(self.crawler_list)
-
         # sdk level combobox
         sdk_thread = SDKLevelThread()
         sdk_thread.transfer(self)
@@ -109,73 +315,6 @@ class MainGUI(CrawlerGUI):
         type_index_list, type_name_list = zip(*type_list)
         self.type_id_list = list(type_index_list)
         self.type_combobox.addItems(type_name_list)
-
-    """
-    设置scrapy
-    """
-
-    def bind_scrapy(self):
-        self.scrapy_worker = ScrapyWorker(self)
-        self.scrapy_start_signal.connect(self.crawler_log_text.clear)
-        self.scrapy_finish_signal.connect(self.scrapy_finish)
-        self.scrapy_log_signal.connect(self.parse_log)
-        self.start_crawl_button.clicked.connect(self.start_scrapy)
-        self.stop_crawl_button.clicked.connect(self.stop_scrapy)
-
-    def parse_log(self, text):
-        pre_cursor = self.crawler_log_text.textCursor()
-        self.crawler_log_text.moveCursor(QtGui.QTextCursor.End)
-        self.crawler_log_text.insertPlainText(text)
-        if self._keep_log_end_:
-            pre_cursor.movePosition(QtGui.QTextCursor.End)
-        self.crawler_log_text.setTextCursor(pre_cursor)
-
-    def start_scrapy(self):
-        if not self.check_value():
-            return
-
-        platform = self.crawler_combobox.currentText()
-        self.start_crawl_button.setVisible(False)
-        self.stop_crawl_button.setVisible(True)
-        self.scrapy_worker.run(platform)
-        self._keep_log_end_ = True
-
-    def stop_scrapy(self):
-        self.scrapy_worker.stop()
-        self.stop_crawl_button.setVisible(False)
-        self.start_crawl_button.setVisible(True)
-
-    def scrapy_finish(self):
-        self.parse_log("\n\n\n Scrapy Worker Done!")
-        self.start_crawl_button.setVisible(True)
-        self.stop_crawl_button.setVisible(False)
-
-    """
-    批量添加APK
-    """
-
-    def bind_add_apk(self):
-        self.add_progress_signal.connect(self.add_apk_progress_bar.setValue)
-        self.add_apk_signal.connect(self.add_apk_success)
-        self.add_apk_button.clicked.connect(self.add_apk_button_click)
-
-    def add_apk_button_click(self):
-        dir_choose = QFileDialog.getExistingDirectory(self, "Choose APK Directory", os.path.join(__current_folder_path__, "../../"))
-        if not dir_choose:
-            return
-        self.add_apk_button.setVisible(False)
-        self.add_apk_progress_bar.setValue(0)
-        self.add_apk_progress_bar.setVisible(True)
-        add_apk_thread = AddAPKThread()
-        add_apk_thread.transfer(self, dir_choose)
-        self.thread_pool.start(add_apk_thread)
-
-    def add_apk_success(self, success_number, repeated_number, error_number):
-        QMessageBox.information(self, "Add APK", "Successfully add APKs.  {} success,  {} Repeated  and  {} error.".format(success_number, repeated_number, error_number), QMessageBox.Ok, QMessageBox.Ok)
-
-        self.add_apk_button.setVisible(True)
-        self.add_apk_progress_bar.setVisible(False)
-        self.add_apk_progress_bar.setValue(0)
 
     """
     查找
@@ -464,90 +603,6 @@ class MainGUI(CrawlerGUI):
         self.thread_pool.start(delete_thread)
 
     """
-    定时器
-    """
-
-    def bind_timer(self):
-        self.timer_window = TimerGUI()
-        self.timer_window.load_crawler(self.crawler_list)
-        self.timer_window.setWindowModality(QtCore.Qt.ApplicationModal)
-        self.timer_window.timer_signal.connect(self.add_new_timer)
-        self.add_timer_button.clicked.connect(self.add_timer_button_click)
-        self.delete_timer_button.clicked.connect(self.delete_timer_button_click)
-
-        self.update_timer()
-
-    def add_timer_button_click(self):
-        if not self.check_value():
-            return
-
-        self.timer_window.reset_edit()
-        self.timer_window.show()
-        self.timer_window.exec_()
-
-    def add_new_timer(self, month, day, hour, minute, crawler_name):
-        if month == -1 and day == -1 and hour == -1 and minute == -1:
-            return
-
-        if month == -1:
-            month = "*"
-        if day == -1:
-            day = "*"
-        if hour == -1:
-            hour = "*"
-        if minute == -1:
-            minute = "*"
-
-        if platform.system() == "Windows":
-            print("Not imply in windows.")
-        else:
-            crawler_script_path = os.path.join(__current_folder_path__, "main.py")
-            crontab_command = "{} {} --market_name {}".format(python_interface, crawler_script_path, crawler_name)
-            crontab_time = "{} {} {} {} *".format(minute, hour, day, month)
-            comment = "apk crawler job"
-            user_crontab = CronTab(user=True)
-            job = user_crontab.new(command=crontab_command, comment=comment)
-            job.setall(crontab_time)
-            job.enable()
-            user_crontab.write()
-
-            self.update_timer()
-
-    def update_timer(self):
-        if platform.system() == "Windows":
-            print("Not imply in windows.")
-        else:
-            user_crontab = CronTab(user=True)  # todo: 检查一下
-            job_iter = user_crontab.find_comment("apk crawler job")
-            self.user_crontab = user_crontab
-            self.timer_list = list(job_iter)
-            timer_data_list = []
-            for job in self.timer_list:  # type: CronItem
-                month, day, hour, minute = job.month, job.dom, job.hour, job.minute
-                crawler = job.command.split('--market_name')[1].strip()
-                timer_data_list.append([month, day, hour, minute, crawler])
-
-            self.timer_table_widget.clear()
-            self.timer_table_widget.setRowCount(len(timer_data_list))
-            _row_ = 0
-            for timer_data in timer_data_list:
-                for _column_ in range(self.timer_table_widget.columnCount()):
-                    q_table_widget_item = QTableWidgetItem(str(timer_data[_column_]))
-                    q_table_widget_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-                    self.timer_table_widget.setItem(_row_, _column_, q_table_widget_item)
-                _row_ += 1
-
-    def delete_timer_button_click(self):
-        timer_index = self.timer_table_widget.currentIndex().row()
-        if timer_index == -1:
-            return
-
-        timer_job = self.timer_list[timer_index]  # type: CronItem
-        self.user_crontab.remove(timer_job)
-        self.user_crontab.write()
-        self.update_timer()
-
-    """
     错误
     """
 
@@ -566,9 +621,36 @@ class MainGUI(CrawlerGUI):
             enviro = False
         return enviro
 
+    """
+    批量添加APK
+    """
+
+    def bind_add_apk(self):
+        self.add_progress_signal.connect(self.add_apk_progress_bar.setValue)
+        self.add_apk_signal.connect(self.add_apk_success)
+        self.add_apk_button.clicked.connect(self.add_apk_button_click)
+
+    def add_apk_button_click(self):
+        dir_choose = QFileDialog.getExistingDirectory(self, "Choose APK Directory", os.path.join(__current_folder_path__, "../../"))
+        if not dir_choose:
+            return
+        self.add_apk_button.setVisible(False)
+        self.add_apk_progress_bar.setValue(0)
+        self.add_apk_progress_bar.setVisible(True)
+        add_apk_thread = AddAPKThread()
+        add_apk_thread.transfer(self, dir_choose)
+        self.thread_pool.start(add_apk_thread)
+
+    def add_apk_success(self, success_number, repeated_number, error_number):
+        QMessageBox.information(self, "Add APK", "Successfully add APKs.  {} success,  {} Repeated  and  {} error.".format(success_number, repeated_number, error_number), QMessageBox.Ok, QMessageBox.Ok)
+
+        self.add_apk_button.setVisible(True)
+        self.add_apk_progress_bar.setVisible(False)
+        self.add_apk_progress_bar.setValue(0)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    crawler_gui = MainGUI()
-    crawler_gui.show()
+    data_gui = DataProcess()
+    data_gui.show()
     sys.exit(app.exec_())

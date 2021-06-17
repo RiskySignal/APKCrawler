@@ -22,7 +22,7 @@ class CrawlerGUI(QWidget):
     # Main GUI for crawler module.
 
     def __init__(self):
-        super().__init__()
+        super(CrawlerGUI).__init__()
         self.root_layout_init()
 
     def root_layout_init(self):
